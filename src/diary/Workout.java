@@ -1,9 +1,12 @@
-package workoutdiary;
+package diary;
 
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
+import java.util.ArrayList;
+
+import com.mysql.fabric.xmlrpc.base.Array;
 
 public class Workout {
 	private int id;
@@ -25,15 +28,23 @@ public class Workout {
 		return this.note;	
 	}
 	
-	public ResultSet getExercises(DBConn conn) throws SQLException {
-		ResultSet _rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN ExerciseInWorkout WHERE WorkoutID = " + String.valueOf(this.id) + ";");
-		return _rs;
+	public ArrayList<Exercise> getExercises(DBConn conn) throws SQLException {
+		ResultSet rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN ExerciseInWorkout WHERE WorkoutID = " + String.valueOf(this.id) + ";");
+		
+		ArrayList<Exercise> lst = new ArrayList<Exercise>();
+		
+		while (rs.next()) {
+			lst.add(Exercise.New(rs.getInt("ExerciseID"), conn));
+		}
+		
+		return lst;	
 	}
 	
 	public String toString() {
 		return "Workout " + this.date + ", " + this.time;
 	}
-	public static void main(String[] args) throws SQLException, ClassNotFoundException {
+	
+	public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
 		ResultSet rs = conn.getLastWorkouts(2);
@@ -42,10 +53,10 @@ public class Workout {
 			Workout _w = new Workout(rs);
 			System.out.println(_w + ": " +_w.getNote());
 			
-			ResultSet exercises = _w.getExercises(conn);
+			ArrayList<Exercise> exercises = _w.getExercises(conn);
 			
-			while (exercises.next()) {
-				System.out.println(Exercise.New(exercises.getInt("ExerciseID"), conn));
+			for (Exercise _x: exercises) {
+				System.out.println(_x);
 			}
 			
 		System.out.println();

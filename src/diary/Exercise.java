@@ -1,4 +1,4 @@
-package workoutdiary;
+package diary;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,6 +7,7 @@ import java.sql.Statement;
 public abstract class Exercise {
 	protected int id;
 	protected String name;
+	protected String description;
 	protected boolean equipped;
 	
 	public static Exercise New(int id, DBConn conn) throws SQLException {
@@ -36,13 +37,11 @@ public abstract class Exercise {
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
-		System.out.println(Exercise.New(1, new DBConn("localhost", "Diary", "root", "fish")));
+		//System.out.println(Exercise.New(1, new DBConn("localhost", "Diary", "root", "fish")));
 	}
 }
 
 class UnequippedExercise extends Exercise {
-	protected String description;
-	
 	UnequippedExercise(ResultSet rs) throws SQLException {
 		this.id = rs.getInt("ExerciseID");
 		this.name = rs.getString("Name");
@@ -67,12 +66,13 @@ class EquippedExercise extends Exercise {
 
 	@Override
 	public String getDescription() {
-		return null;
+		return this.description;
 	}
 	
 	public void setEquipment(DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(this.equipment_id) + ";");
 		rs.next();
 		this.equipment = new Equipment(rs);
+		this.description = this.equipment.getDescription();
 	}
 }

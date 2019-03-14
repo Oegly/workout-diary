@@ -22,6 +22,9 @@ public class Workout {
 		this.note = rs.getString("Note");
 		this.date = rs.getDate("Date");
 		this.time = rs.getTime("Time");
+		this.duration = rs.getInt("Duration");
+		this.personalPerformance = rs.getInt("PersonalPerformance");
+		this.personalShape = rs.getInt("PersonalShape");
 	}
 	
 	public String getNote() {
@@ -29,7 +32,7 @@ public class Workout {
 	}
 	
 	public ArrayList<Exercise> getExercises(DBConn conn) throws SQLException {
-		ResultSet rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN ExerciseInWorkout WHERE WorkoutID = " + String.valueOf(this.id) + ";");
+		ResultSet rs = conn.getRows("SELECT * FROM Exercise NATURAL JOIN ExerciseInWorkout WHERE WorkoutID = " + String.valueOf(this.id) + ";");
 		
 		ArrayList<Exercise> lst = new ArrayList<Exercise>();
 		

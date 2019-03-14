@@ -12,11 +12,9 @@ public abstract class Exercise {
 	
 	public static Exercise New(int id, DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRow("SELECT * FROM Exercise WHERE ExerciseID = " + String.valueOf(id) + ";");
-		rs.next();
 	
 		if (rs.getBoolean("Equipped")) {
 			ResultSet _rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN EquippedExercise WHERE ExerciseID = " + String.valueOf(id) + ";");
-			_rs.next();
 			EquippedExercise _ex = new EquippedExercise(_rs);
 			
 			_ex.setEquipment(conn);
@@ -25,7 +23,6 @@ public abstract class Exercise {
 		}
 		
 		ResultSet _rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN UnequippedExercise WHERE ExerciseID = " + String.valueOf(id) + ";");
-		_rs.next();
 		
 		return new UnequippedExercise(_rs);
 }
@@ -71,7 +68,6 @@ class EquippedExercise extends Exercise {
 	
 	public void setEquipment(DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(this.equipment_id) + ";");
-		rs.next();
 		this.equipment = new Equipment(rs);
 		this.description = this.equipment.getDescription();
 	}

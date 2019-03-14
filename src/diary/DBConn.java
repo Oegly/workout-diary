@@ -30,8 +30,15 @@ public class DBConn {
 		this.connection = DriverManager.getConnection(this.db_url, username, password);
 	}
 	
-	public ResultSet getRow(String query) throws SQLException {
+	public ResultSet getRows(String query) throws SQLException {
 		return this.connection.createStatement().executeQuery(query);
+	}
+	
+	public ResultSet getRow(String query) throws SQLException {
+		ResultSet rs = this.connection.createStatement().executeQuery(query);
+		rs.next();
+		
+		return rs;
 	}
 	
 	public void insertEquipment(String name, String description) throws SQLException {
@@ -91,7 +98,7 @@ public class DBConn {
 	
 	// Få opp informasjon om et antall n sist gjennomførte treningsøkter med notater, der n spesifiseres av brukeren.
 	public ResultSet getLastWorkouts(int n) throws SQLException {
-		return this.getRow("SELECT * FROM Workout ORDER BY Date, Time DESC LIMIT " + String.valueOf(n) + ";");
+		return this.getRows("SELECT * FROM Workout ORDER BY Date, Time DESC LIMIT " + String.valueOf(n) + ";");
 	}
 	
 	public static void main(String[] args) throws SQLException, ClassNotFoundException {

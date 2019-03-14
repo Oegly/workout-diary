@@ -11,7 +11,6 @@ public class Equipment {
 
 	Equipment(int id, DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(id) + ";");
-		rs.next();
 		
 		this.id = rs.getInt("EquipmentID");
 		this.name = rs.getString("Name");

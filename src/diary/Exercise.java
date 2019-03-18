@@ -3,11 +3,13 @@ package diary;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
-public abstract class Exercise {
+public abstract class Exercise extends DiaryEntity {
 	protected int id;
 	protected String name;
 	protected String description;
+	protected String table;
 	protected boolean equipped;
 	
 	public static Exercise New(int id, DBConn conn) throws SQLException {
@@ -33,12 +35,44 @@ public abstract class Exercise {
 		return this.name;
 	}
 	
+	public static ArrayList<Exercise> list(int n, DBConn conn) throws SQLException {
+		ArrayList<Exercise> ret = new ArrayList<Exercise>();
+		String query = "SELECT * FROM Exercise ORDER BY Name";
+		
+		if (n > 0) {
+			query.concat(" LIMIT " + String.valueOf(n));
+		}
+		
+		query.concat(";");
+		ResultSet rs = conn.getRows(query);
+		
+		while(rs.next()) {
+			ret.add(Exercise.New(rs.getInt("id"), conn));
+		}
+		
+		return ret;
+	}
+	
+	public static ArrayList<Exercise> search(String s, DBConn conn) throws SQLException {
+		ArrayList<Exercise> ret = new ArrayList<Exercise>();
+		String query = "SELECT * FROM Exercise WHERE Name LIKE '%" + s + "%';";
+		ResultSet rs = conn.getRows(query);
+		
+		while(rs.next()) {
+			ret.add(Exercise.New(rs.getInt("id"), conn));
+		}
+		
+		return ret;
+	}
+	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		//System.out.println(Exercise.New(1, new DBConn("localhost", "Diary", "root", "fish")));
 	}
 }
 
 class UnequippedExercise extends Exercise {
+	protected String table = "Exercise NATURAL JOIN UnequippedExercise";
+	
 	UnequippedExercise(ResultSet rs) throws SQLException {
 		this.id = rs.getInt("ExerciseID");
 		this.name = rs.getString("Name");
@@ -52,6 +86,7 @@ class UnequippedExercise extends Exercise {
 }
 
 class EquippedExercise extends Exercise {
+	protected String table = "Exercise NATURAL JOIN EquippedExercise";
 	protected Equipment equipment;
 	protected int equipment_id;
 	

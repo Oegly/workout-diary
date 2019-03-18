@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 import com.mysql.fabric.xmlrpc.base.Array;
 
-public class Workout {
+public class Workout extends DiaryEntity {
 	private int id;
 	private Date date;
 	private Time time;
@@ -43,8 +43,38 @@ public class Workout {
 		return lst;	
 	}
 	
+	public static ArrayList<Workout> list(int n, DBConn conn) throws SQLException {
+		ArrayList<Workout> ret = new ArrayList<Workout>();
+		String query = "SELECT * FROM Workout ORDER BY Date, Time DESC";
+		
+		if (n > 0) {
+			query.concat(" LIMIT " + String.valueOf(n));
+		}
+		
+		query.concat(";");
+		ResultSet rs = conn.getRows(query);
+		
+		while(rs.next()) {
+			ret.add(new Workout(rs));
+		}
+		
+		return ret;
+	}
+	
+	public static ArrayList<Workout> search(String s, DBConn conn) throws SQLException {
+		ArrayList<Workout> ret = new ArrayList<Workout>();
+		String query = "SELECT * FROM Workout WHERE Notes LIKE '%" + s + "%';";
+		ResultSet rs = conn.getRows(query);
+		
+		while(rs.next()) {
+			ret.add(new Workout(rs));
+		}
+		
+		return ret;
+	}
+	
 	public String toString() {
-		return "Workout " + this.date + ", " + this.time;
+		return "Trenigsøkt (#" + String.valueOf(this.id)+ ") "  + this.date + ", " + this.time;
 	}
 	
 	public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {

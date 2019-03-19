@@ -10,11 +10,7 @@ public class Equipment extends DiaryEntity {
 	private String description;
 
 	Equipment(int id, DBConn conn) throws SQLException {
-		ResultSet rs = conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(id) + ";");
-		
-		this.id = rs.getInt("EquipmentID");
-		this.name = rs.getString("Name");
-		this.description = rs.getString("Description");
+		this(conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(id) + ";"));
 		
 	}
 	
@@ -41,12 +37,13 @@ public class Equipment extends DiaryEntity {
 		String query = "SELECT * FROM Equipment ORDER BY Name";
 		
 		if (n > 0) {
-			query.concat(" LIMIT " + String.valueOf(n));
+			query = query.concat(" LIMIT " + String.valueOf(n));
 		}
 		
-		query.concat(";");
+		query = query.concat(";");
 		ResultSet rs = conn.getRows(query);
 		
+		System.out.println(query);
 		while(rs.next()) {
 			ret.add(new Equipment(rs));
 		}
@@ -67,7 +64,7 @@ public class Equipment extends DiaryEntity {
 	}
 	
 	public ArrayList<Exercise> getExercises(DBConn conn) throws SQLException {
-		ResultSet rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN EquippedExercise WHERE EquipmentID = " + String.valueOf(this.id) +";");
+		ResultSet rs = conn.getRows("SELECT * FROM Exercise NATURAL JOIN EquippedExercise WHERE EquipmentID = " + String.valueOf(this.id) +";");
 		
 		ArrayList<Exercise> lst = new ArrayList<Exercise>();
 		
@@ -79,7 +76,19 @@ public class Equipment extends DiaryEntity {
 	}
 	
 	public String toString() {
-		return this.name;
+		return "Treningsapparat (#" + String.valueOf(this.id)+ ") " + this.name;
+	}
+	
+	public String detailedString(DBConn conn) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		
+		ArrayList<Exercise> exercises = this.getExercises(conn);
+		
+		for (Exercise _x: exercises) {
+			sb.append(" " + _x.toString() + "\n");
+		}
+		
+		return this.toString() + "\n" + sb.toString();
 	}
 	
 	public static void setThing() {
@@ -89,9 +98,8 @@ public class Equipment extends DiaryEntity {
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		Equipment _e = new Equipment(3, conn);
-		System.out.println(_e + ": " + _e.getExercises(conn));
+		System.out.println(Equipment.list(1, conn));
 		
-		conn.setRow("INSERT INTO Equipment VALUES ();");
+		//conn.setRow("INSERT INTO Equipment VALUES ();");
 	}
 }

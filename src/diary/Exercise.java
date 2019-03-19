@@ -32,7 +32,11 @@ public abstract class Exercise extends DiaryEntity {
 	public abstract String getDescription();
 	
 	public String toString() {
-		return this.name;
+		return "Øving (#" + String.valueOf(this.id)+ ") " + this.name;
+	}
+	
+	public String detailedString() {
+		return this.toString();
 	}
 	
 	public static ArrayList<Exercise> list(int n, DBConn conn) throws SQLException {
@@ -40,14 +44,14 @@ public abstract class Exercise extends DiaryEntity {
 		String query = "SELECT * FROM Exercise ORDER BY Name";
 		
 		if (n > 0) {
-			query.concat(" LIMIT " + String.valueOf(n));
+			query = query.concat(" LIMIT " + String.valueOf(n));
 		}
 		
-		query.concat(";");
+		query = query.concat(";");
 		ResultSet rs = conn.getRows(query);
 		
 		while(rs.next()) {
-			ret.add(Exercise.New(rs.getInt("id"), conn));
+			ret.add(Exercise.New(rs.getInt("ExerciseId"), conn));
 		}
 		
 		return ret;
@@ -83,6 +87,11 @@ class UnequippedExercise extends Exercise {
 	public String getDescription() {
 		return this.description;
 	}
+	
+	@Override
+	public String detailedString() {
+		return this.toString() + "(" + this.description +")";
+	}
 }
 
 class EquippedExercise extends Exercise {
@@ -101,6 +110,11 @@ class EquippedExercise extends Exercise {
 		return this.description;
 	}
 	
+	@Override
+	public String detailedString() {
+		return this.toString() + "\n"
+				+ "Bruk " + this.equipment.getName() + " (" + this.description + ")";
+	}
 	public void setEquipment(DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRow("SELECT * FROM Equipment WHERE EquipmentID = " + String.valueOf(this.equipment_id) + ";");
 		this.equipment = new Equipment(rs);

@@ -3,27 +3,26 @@ package diary;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Main {
 	public static void main(String[] args)  {
 		try {
 			DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
+			Conversation c = new Conversation(conn);
 			
-			ResultSet rs = conn.getLastWorkouts(2);
-			
-			while (rs.next()) {
-				Workout _w = new Workout(rs);
-				System.out.println(_w + ": " +_w.getNote());
-				
-				ArrayList<Exercise> exercises = _w.getExercises(conn);
-				
-				for (Exercise _x: exercises) {
-					System.out.println(_x);
-				}
-			
-			System.out.println();
+			String input = "";
+			Scanner scan = new Scanner(System.in);
+						
+			while (!input.equals("q") && scan.hasNext()) {
+				input = scan.nextLine();
+				c.feed(input);
+				System.out.print(c.getPrompt());
 			}
+			
+			scan.close();
 
+			System.out.println();
 		} catch (ClassNotFoundException | SQLException  e) {
 			e.printStackTrace();
 		}

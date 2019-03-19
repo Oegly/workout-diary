@@ -16,6 +16,11 @@ public class Workout extends DiaryEntity {
 	private int personalShape;
 	private int personalPerformance;
 	private String note;
+	//private ArrayList<Exercise> exercises;
+	
+	Workout(int id, DBConn conn) throws SQLException {
+		this(conn.getRow("SELECT * FROM Workout WHERE WorkoutID =" + id + ";"));
+	}
 	
 	Workout(ResultSet rs) throws SQLException {
 		this.id = rs.getInt("WorkoutID");
@@ -25,6 +30,8 @@ public class Workout extends DiaryEntity {
 		this.duration = rs.getInt("Duration");
 		this.personalPerformance = rs.getInt("PersonalPerformance");
 		this.personalShape = rs.getInt("PersonalShape");
+		
+		//this.exercises = this.getExercises(conn);
 	}
 	
 	public String getNote() {
@@ -48,10 +55,10 @@ public class Workout extends DiaryEntity {
 		String query = "SELECT * FROM Workout ORDER BY Date, Time DESC";
 		
 		if (n > 0) {
-			query.concat(" LIMIT " + String.valueOf(n));
+			query = query.concat(" LIMIT " + String.valueOf(n));
 		}
 		
-		query.concat(";");
+		query = query.concat(";");
 		ResultSet rs = conn.getRows(query);
 		
 		while(rs.next()) {
@@ -74,28 +81,35 @@ public class Workout extends DiaryEntity {
 	}
 	
 	public String toString() {
-		return "Trenigsøkt (#" + String.valueOf(this.id)+ ") "  + this.date + ", " + this.time;
+		return "Trenigsøkt (#" + String.valueOf(this.id)+ ") "  + this.date + ", " + this.time
+				+ "\n  " + this.note;
+	}
+	
+	public String detailedString(DBConn conn) throws SQLException {
+		StringBuilder sb = new StringBuilder();
+		
+		ArrayList<Exercise> exercises = this.getExercises(conn);
+		
+		for (Exercise _x: exercises) {
+			sb.append(" " + _x.toString() + "\n");
+		}
+		
+		return "Treningsøkt #" + String.valueOf(this.id)
+		+ "\nStart: " + this.date + ", " + this.time
+		+ "\nVarigheit: " + this.duration + " minutt"
+		+ "\nPersonleg innsats: " + this.personalPerformance
+		+ "\nPersonleg form: " + this.personalShape + "\n\n"
+		+ "Notat:\n  " + this.note + "\n\n"
+		+ "Utførte øvingar:\n" + sb.toString() + "\n\n";
 	}
 	
 	public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		ResultSet rs = conn.getLastWorkouts(2);
-		
-		while (rs.next()) {
-			Workout _w = new Workout(rs);
-			System.out.println(_w + ": " +_w.getNote());
-			
-			ArrayList<Exercise> exercises = _w.getExercises(conn);
-			
-			for (Exercise _x: exercises) {
-				System.out.println(_x);
-			}
-			
-		System.out.println();
+		for (Workout _w: Workout.list(2, conn)) {
+			System.out.println(_w.detailedString(conn));
 		}
 		
-		System.out.println();
-		System.out.println(Exercise.New(1, conn));
+		
 	}
 }

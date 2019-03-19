@@ -52,7 +52,7 @@ public class Workout extends DiaryEntity {
 	
 	public static ArrayList<Workout> list(int n, DBConn conn) throws SQLException {
 		ArrayList<Workout> ret = new ArrayList<Workout>();
-		String query = "SELECT * FROM Workout ORDER BY Date, Time DESC";
+		String query = "SELECT * FROM Workout ORDER BY Date DESC, Time DESC";
 		
 		if (n > 0) {
 			query = query.concat(" LIMIT " + String.valueOf(n));
@@ -78,6 +78,26 @@ public class Workout extends DiaryEntity {
 		}
 		
 		return ret;
+	}
+	
+	public String getInterval(String start, String end, DBConn conn) {
+		try {
+			String query = "SELECT * FROM Workout WHERE Date BETWEEN " + start + " AND " + end +";";
+			ResultSet rs = conn.getRows(query);
+			
+			StringBuilder sb = new StringBuilder();
+			sb.append("Resultatlogg for intervallet " + start + " - " + end + " : (#, Dato, Form, Yting)");
+			
+			while(rs.next()) {
+				Workout _w = new Workout(rs);
+				sb.append("#" + _w.id + " " + _w.date + ": " + this.personalShape + ", " + this.personalPerformance);
+			}
+			
+			return sb.toString();
+		} catch (SQLException e) {
+			System.out.println(e);
+			return "Prøv å skrive datoane på formatet yyyy-mm-dd";
+		}
 	}
 	
 	public String toString() {
@@ -106,10 +126,6 @@ public class Workout extends DiaryEntity {
 	public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		for (Workout _w: Workout.list(2, conn)) {
-			System.out.println(_w.detailedString(conn));
-		}
-		
-		
+
 	}
 }

@@ -14,7 +14,7 @@ public class Main {
 			String input = "";
 			Scanner scan = new Scanner(System.in);
 						
-			while (!input.equals("q") && scan.hasNext()) {
+			while (!input.equals("quit") && scan.hasNext()) {
 				input = scan.nextLine();
 				c.feed(input);
 				System.out.print(c.getPrompt());

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mysql.jdbc.PreparedStatement;
+import com.mysql.jdbc.ResultSetMetaData;
 
 public class DBConn {
 	private String driver;
@@ -41,16 +42,21 @@ public class DBConn {
 		return rs;
 	}
 	
-	public void insertEquipment(String name, String description) throws SQLException {
+	public Equipment insertEquipment(String name, String description) throws SQLException {
 		String query = "INSERT INTO Equipment (Name, Description) VALUES (?, ?);";
-		java.sql.PreparedStatement stm1 = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+		java.sql.PreparedStatement stm = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 		
-		stm1.setString(1, name);
-		stm1.setString(2, description);
-		stm1.executeUpdate();
+		stm.setString(1, name);
+		stm.setString(2, description);
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new Equipment(rs.getInt(1), this);
 	}
 	
-	public void insertUnequippedExercise(String name, String description) throws SQLException {
+	public Exercise insertUnequippedExercise(String name, String description) throws SQLException {
 		String query = "INSERT INTO Exercise (Name, Equipped) VALUES (?, ?);";
 		java.sql.PreparedStatement stm1 = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 		
@@ -68,9 +74,11 @@ public class DBConn {
 		stm2.setInt(1, rs.getInt(1));
 		stm2.setString(2, description);
 		stm2.executeUpdate();
+		
+		return Exercise.New(rs.getInt(1), this);
 	}
 	
-	public void insertEquippedExercise(String name, Equipment equipment, int weight, int sets) throws SQLException {
+	public Exercise insertEquippedExercise(String name, Equipment equipment, int weight, int sets) throws SQLException {
 		String query = "INSERT INTO Exercise (Name, Equipped) VALUES (?, ?);";
 		java.sql.PreparedStatement stm1 = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 		
@@ -90,10 +98,69 @@ public class DBConn {
 		stm2.setInt(3, weight);
 		stm2.setInt(4, sets);
 		stm2.executeUpdate();
+		
+		return Exercise.New(rs.getInt(1), this);
+	}
+	
+	public Workout insertWorkout(String date, String time, int duration, int shape, int performance, String note) throws SQLException {
+		String query = "INSERT INTO Workout (Date, Time, Duration, PersonalShape, PersonalPerformance, Note) VALUES (?, ?, ?, ?, ?, ?);";
+		
+		java.sql.PreparedStatement stm = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+		
+		stm.setString(1, date);
+		stm.setString(2, time);
+		stm.setInt(3, duration);
+		stm.setInt(4, shape);
+		stm.setInt(5, performance);
+		stm.setString(6, note);
+		
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new Workout(rs.getInt(1), this);
+	}
+	
+	public ExerciseGroup insertGroup(String name) throws SQLException {
+		String query = "INSERT INTO ExerciseGroup (Name) VALUES (?);";
+		
+		java.sql.PreparedStatement stm = this.connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+		
+		stm.setString(1, name);
+		
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new ExerciseGroup(rs.getInt(1), this);
 	}
 	
 	public void setRow(String query) throws SQLException {
 		this.connection.createStatement().executeQuery(query);
+	}
+	
+	public String addExerciseToGroup(int exerciseId, int groupId) throws SQLException {
+		String query = "INSERT INTO ExerciseInGroup VALUES (?, ?);";
+		java.sql.PreparedStatement stm = this.connection.prepareStatement(query);
+		
+		stm.setInt(1, exerciseId);
+		stm.setInt(2, groupId);
+		stm.executeUpdate();
+
+		return new ExerciseGroup(groupId, this).detailedString(this);
+	}
+
+	public String addExerciseToWorkout(int exerciseId, int workoutId) throws SQLException {
+		String query = "INSERT INTO ExerciseInWorkout VALUES (?, ?);";
+		java.sql.PreparedStatement stm = this.connection.prepareStatement(query);
+		
+		stm.setInt(1, exerciseId);
+		stm.setInt(2, workoutId);
+		stm.executeUpdate();
+
+		return new Workout(workoutId, this).detailedString(this);
 	}
 	
 	// Få opp informasjon om et antall n sist gjennomførte treningsøkter med notater, der n spesifiseres av brukeren.

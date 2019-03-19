@@ -60,6 +60,19 @@ public class ExerciseGroup extends DiaryEntity {
 		return lst;
 	}
 	
+	public ArrayList<Workout> getWorkouts(DBConn conn) throws SQLException {
+		ResultSet rs = conn.getRows("SELECT WorkoutID FROM ExerciseInWorkout NATURAL JOIN ExerciseInGroup WHERE GroupID =" + this.id + " GROUP BY WorkoutID;");
+		//return rs;
+		
+		ArrayList<Workout> lst = new ArrayList<Workout>();
+		
+		while (rs.next()) {
+			lst.add(new Workout(rs.getInt("WorkoutID"), conn));
+		}
+		
+		return lst;
+	}
+	
 	public String toString() {
 		return "Øvingsgruppe (#" + String.valueOf(this.id)+ ") " + this.name;
 	}
@@ -79,7 +92,6 @@ public class ExerciseGroup extends DiaryEntity {
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		ResultSet rs = conn.getRow("SELECT * FROM ExerciseGroup WHERE GroupID = 1;");
-		System.out.println(new ExerciseGroup(rs));
+		System.out.println(new ExerciseGroup(1, conn).getWorkouts(conn).toString());
 	}
 }

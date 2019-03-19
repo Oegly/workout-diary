@@ -3,6 +3,7 @@ package diary;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -12,7 +13,7 @@ import diary.Conversation.State;
 
 public class Conversation {
 	enum State {
-		INITIAL, LIST, SEARCH, CREATE, DETAIL, REMOVE, ADD, APPEND_GROUP, APPEND_WORKOUT
+		INITIAL, LIST, SEARCH, CREATE, DETAIL, REMOVE, ADD, APPEND_GROUP, APPEND_WORKOUT, WORKOUT_INTERVAL
 	}
 
 	HashMap<State, String> command = new HashMap<State, String>();
@@ -21,6 +22,10 @@ public class Conversation {
 
 	String prompt = " > ";
 	String error = "Det forstod eg ikkje heilt...";
+	String entityCodes = "w = Treningsøkt\n"
+			+ "e = Apparat\n"
+			+ "x = Øving\n"
+			+ "g = Øvingsgruppe\n";
 	State state;
 	State prevState;
 	DBConn conn;
@@ -33,23 +38,38 @@ public class Conversation {
 				+ "src = Søk etter element\n"
 				+ "dtl = Sjå detaljert informasjon om eit element\n"
 				+ "crt = Sett inn eit nytt element\n"
-				+ "etg = Registrer ei øving i ei gruppe\n"
-				+ "etw = Registrer ei øving i ei treningsøkt\n\n"
+				+ "addg = Registrer ei øving i ei gruppe\n"
+				+ "addw = Registrer ei øving i ei treningsøkt\n\n"
 				+ "Meir avanserte funksjonar:\n"
 				+ "win = Sjå resultatlogg økter i eit gitt tidsintervall\n"
 				+ "wog = Sjå kva for grupper som har vore representert i ei treningsøkt\n"
 				+ "");
-		this.helpMessage.put(State.LIST, "Skriv kva for element du vil sjå ei liste over, og eventuelt kor mange.\n\n"
-				+ "w = Treningsøkt\n"
-				+ "e = Apparat\n"
-				+ "x = Øving\n"
-				+ "g = Øvingsgruppe\n");
-		this.helpMessage.put(State.DETAIL, "");
 		
-		this.example.put(State.LIST, "Om du til dømes vil sjå dei tre siste treningsøktene, skriv \"w 3\".");
+		this.helpMessage.put(State.LIST, "Skriv kva for element du vil sjå ei liste over, og eventuelt kor mange.\n\n" + this.entityCodes);
+		this.helpMessage.put(State.DETAIL, "Skriv inn kva for type element du vil sjå, med ID.\n\n" + this.entityCodes);
+		this.helpMessage.put(State.APPEND_GROUP, "Skriv inn # for øvinga, etterfullgt av # for gruppa.");
+		this.helpMessage.put(State.APPEND_WORKOUT, "Skriv inn # for øvinga, etterfullgt av # for treningsøkta.");
+		this.helpMessage.put(State.CREATE, "Format på kommandoar for å legge til element:"
+				+ "Apparat: e [Namn] [Beskriving]"
+				+ "Øving (med apparat): xe [Namn] [Beskriving]"
+				+ "Øving (utan apparat): xu [Namn] [# på apparat] [Vekt] [Sett]"
+				+ "Gruppe: g [Namn]"
+				+ "Treningsøkt: w [Dato: yyyy-mm-dd] [Tidspunkt: hh:mm:ss] [varigheit, i minutt]\n"
+				+ "[Personleg form, 1-10] [Personleg yting, 1-10] [Notat]");
+		
 		this.example.put(State.INITIAL, "");
+		this.example.put(State.LIST, "Om du til dømes vil sjå dei tre siste treningsøktene, skriv \"w 3\".");
+		this.example.put(State.DETAIL, "Om du til dømes vil sjå detaljert informasjon om treningsøkt #3, skriv \"w 3\".");
+		this.example.put(State.APPEND_GROUP, "Om du vil legge øving #2 til gruppe #3, skriv du \"2 3\"");
+		this.example.put(State.APPEND_WORKOUT, "Om du vil legge øving #2 til treningsøkt #3, skriv du \"2 3\"");
+		this.example.put(State.CREATE, "Eksempel:\n"
+				+ "Apparat: e Ergometersykkel Det er ein sånn du syklar på"
+				+ "Øving (utan apparat): xu Spensthopp Hopp med mykje spenst!"
+				+ "Øving (med apparat): xe Sykling 1 10 40"
+				+ "Gruppe: g Beintrening"
+				+ "Treningsøkt: w 2019-03-31 15:00:00 45 7 7 Helledussen, så flink eg var!");
 				
-		System.out.print("Velkommen til treningsdagboka di! ");
+		System.out.print("Velkommen til treningsdagboka di! Kva vil du gjere?");
 		this.transition(State.INITIAL);
 		System.out.println(this.getPrompt());
 	}
@@ -73,6 +93,7 @@ public class Conversation {
 		case INITIAL: this.welcomeScreen(input); break;
 		case LIST: System.out.println(this.list(input)); break;
 		case DETAIL: System.out.println(this.detail(input)); break;
+		case CREATE: System.out.println(this.create(input)); break;
 		
 		default: this.welcomeScreen(input); break;
 		}
@@ -93,7 +114,11 @@ public class Conversation {
 		} else if ("src".equals(input)) {
 			this.state = State.SEARCH;
 		} else if ("dtl".equals(input)) {
-			this.state = State.DETAIL;
+			this.transition(State.DETAIL);
+		} else if ("addg".equals(input)) {
+			this.transition(State.APPEND_GROUP);
+		} else if ("addw".equals(input)) {
+			this.transition(State.APPEND_WORKOUT);
 		} else {
 			System.out.println(this.breakdown());
 		}
@@ -143,8 +168,35 @@ public class Conversation {
 		return sb.toString();
 	}
 	
-	private void create(String input) {
+	private String create(String input) throws SQLException {
+		String[] words = input.split(" ");
 		
+		try {
+		switch (words[0]) {
+		case "": break;
+		case "g": return this.conn.insertGroup(words[1]).detailedString(this.conn);
+		case "e": return this.conn.insertEquipment(words[1], this.nthSubstring(input, 3)).detailedString(this.conn);
+		case "xe": return this.conn.insertEquippedExercise(
+				words[0],
+				new Equipment(Integer.parseInt(words[1]), this.conn),
+				Integer.parseInt(words[2]),
+				Integer.parseInt(words[3])).detailedString();
+		case "xu": return this.conn.insertUnequippedExercise(words[0], this.nthSubstring(input, 3)).detailedString();
+		case "w": return this.conn.insertWorkout(
+				words[1],
+				words[2],
+				Integer.parseInt(words[3]),
+				Integer.parseInt(words[4]),
+				Integer.parseInt(words[5]),
+				this.nthSubstring(input, 7)).detailedString(this.conn);
+		
+		default: return this.breakdown();
+		}
+		} catch (IndexOutOfBoundsException | NumberFormatException | SQLException e) {
+			System.out.println(e);
+		}
+		
+		return "";
 	}
 	
 	private String detail(String input) {
@@ -172,6 +224,28 @@ public class Conversation {
 		}
 	}
 	
+	private String appendGroup(String input) {
+		try {
+			String[] words = input.split(" ");
+			return this.conn.addExerciseToGroup(Integer.parseInt(words[0]), Integer.parseInt(words[1]));
+		}
+		catch (IndexOutOfBoundsException | SQLException e) {
+			System.out.println(e);
+			return "Det gjekk ikkje heilt. Prøv igjen!";
+		}
+	}
+	
+	private String appendWorkout(String input) {
+		try {
+			String[] words = input.split(" ");
+			return this.conn.addExerciseToWorkout(Integer.parseInt(words[0]), Integer.parseInt(words[1]));
+		}
+		catch (IndexOutOfBoundsException | SQLException e) {
+			System.out.println(e);
+			return "Det gjekk ikkje heilt. Prøv igjen!";
+		}
+	}
+	
 	private void help() {
 		try {
 			System.out.println(
@@ -185,5 +259,26 @@ public class Conversation {
 	private String breakdown() {
 		this.state = State.INITIAL;
 		return "Det forstod eg ikkje heilt...\nDu er tilbake på startmenyen.";
+	}
+	
+	private String nthSubstring(String s, int n) {
+		int currentIndex = 0;
+		
+		for (int i = 1; i < n; i++) {
+			currentIndex = s.indexOf(' ', currentIndex + 1);
+		}
+		
+		return s.substring(currentIndex+1);
+	}
+	
+	public static void main(String[] args) {
+		String input = "e Staurmaskin Det er sjukt kult å bere staur!";
+		String manyp = "yyyy-mm-dd 15:00:00 45 7 7 Helledussen, så flink eg var!";
+		
+		/*
+		System.out.println(input);
+		System.out.println(Conversation.nthSubstring(input, 3));
+		System.out.println(Conversation.nthSubstring(manyp, 6));
+		//System.out.println(manyp.substring(55));*/
 	}
 }

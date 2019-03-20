@@ -2,6 +2,7 @@ package diary;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 public class Equipment extends DiaryEntity {
@@ -43,7 +44,6 @@ public class Equipment extends DiaryEntity {
 		query = query.concat(";");
 		ResultSet rs = conn.getRows(query);
 		
-		System.out.println(query);
 		while(rs.next()) {
 			ret.add(new Equipment(rs));
 		}
@@ -75,6 +75,20 @@ public class Equipment extends DiaryEntity {
 		return lst;
 	}
 	
+	public static Equipment insert(String name, String description, DBConn conn) throws SQLException {
+		String query = "INSERT INTO Equipment (Name, Description) VALUES (?, ?);";
+		java.sql.PreparedStatement stm = conn.prepareStatement(query, true);
+		
+		stm.setString(1, name);
+		stm.setString(2, description);
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new Equipment(rs.getInt(1), conn);
+	}
+	
 	public String toString() {
 		return "Treningsapparat (#" + String.valueOf(this.id)+ ") " + this.name;
 	}
@@ -88,7 +102,8 @@ public class Equipment extends DiaryEntity {
 			sb.append(" " + _x.toString() + "\n");
 		}
 		
-		return this.toString() + "\n" + sb.toString();
+		return this.toString() + "\n" + this.description + "\n\n"
+				+ "Brukast i følgande øvingar:\n" + sb.toString();
 	}
 	
 	public static void setThing() {
@@ -98,7 +113,7 @@ public class Equipment extends DiaryEntity {
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		System.out.println(Equipment.list(1, conn));
+		System.out.println(new Equipment(2, conn).detailedString(conn));
 		
 		//conn.setRow("INSERT INTO Equipment VALUES ();");
 	}

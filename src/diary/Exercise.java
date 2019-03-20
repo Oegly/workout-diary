@@ -83,6 +83,28 @@ class UnequippedExercise extends Exercise {
 		this.description = rs.getString("Description");
 	}
 
+	public static Exercise insert(String name, String description, DBConn conn) throws SQLException {
+		String query = "INSERT INTO Exercise (Name, Equipped) VALUES (?, ?);";
+		java.sql.PreparedStatement stm1 = conn.prepareStatement(query);
+		
+		stm1.setString(1, name);
+		stm1.setBoolean(2, false);
+		stm1.executeUpdate();
+		
+		ResultSet rs = stm1.getGeneratedKeys();
+		rs.next();
+		
+		query = "INSERT INTO UnequippedExercise (ExerciseID, Description) VALUES (?, ?);";
+		
+		java.sql.PreparedStatement stm2 = conn.prepareStatement(query);
+		
+		stm2.setInt(1, rs.getInt(1));
+		stm2.setString(2, description);
+		stm2.executeUpdate();
+		
+		return Exercise.New(rs.getInt(1), conn);
+	}
+
 	@Override
 	public String getDescription() {
 		return this.description;
@@ -103,6 +125,30 @@ class EquippedExercise extends Exercise {
 		this.id = rs.getInt("ExerciseID");
 		this.name = rs.getString("Name");
 		this.equipment_id = rs.getInt("EquipmentID");
+	}
+
+	public static Exercise insert(String name, Equipment equipment, int weight, int sets, DBConn conn) throws SQLException {
+		String query = "INSERT INTO Exercise (Name, Equipped) VALUES (?, ?);";
+		java.sql.PreparedStatement stm1 = conn.prepareStatement(query);
+		
+		stm1.setString(1, name);
+		stm1.setBoolean(2, true);
+		stm1.executeUpdate();
+		
+		ResultSet rs = stm1.getGeneratedKeys();
+		rs.next();
+		
+		query = "INSERT INTO EquippedExercise (ExerciseID, EquipmentID, Weight, Sets) VALUES (?, ?, ?, ?);";
+		
+		java.sql.PreparedStatement stm2 = conn.prepareStatement(query);
+		
+		stm2.setInt(1, rs.getInt(1));
+		stm2.setInt(2, equipment.getId());
+		stm2.setInt(3, weight);
+		stm2.setInt(4, sets);
+		stm2.executeUpdate();
+		
+		return Exercise.New(rs.getInt(1), conn);
 	}
 
 	@Override

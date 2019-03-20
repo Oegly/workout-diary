@@ -79,7 +79,7 @@ public class Conversation {
 	}
 	
 	public void feed(String input) throws SQLException {
-		this.evaluate(input);
+		this.evaluate(input.trim());
 	}
 	
 	private void evaluate(String input) throws SQLException {
@@ -94,6 +94,8 @@ public class Conversation {
 		case LIST: System.out.println(this.list(input)); break;
 		case DETAIL: System.out.println(this.detail(input)); break;
 		case CREATE: System.out.println(this.create(input)); break;
+		case APPEND_GROUP: System.out.println(this.appendGroup(input)); break;
+		case APPEND_WORKOUT: System.out.println(this.appendWorkout(input)); break;
 		
 		default: this.welcomeScreen(input); break;
 		}
@@ -174,21 +176,23 @@ public class Conversation {
 		try {
 		switch (words[0]) {
 		case "": break;
-		case "g": return this.conn.insertGroup(words[1]).detailedString(this.conn);
-		case "e": return this.conn.insertEquipment(words[1], this.nthSubstring(input, 3)).detailedString(this.conn);
-		case "xe": return this.conn.insertEquippedExercise(
+		case "g": return ExerciseGroup.insert(words[1], this.conn).detailedString(this.conn);
+		case "e": return Equipment.insert(words[1], this.nthSubstring(input, 3), this.conn).detailedString(this.conn);
+		case "xe": return EquippedExercise.insert(
 				words[0],
 				new Equipment(Integer.parseInt(words[1]), this.conn),
 				Integer.parseInt(words[2]),
-				Integer.parseInt(words[3])).detailedString();
-		case "xu": return this.conn.insertUnequippedExercise(words[0], this.nthSubstring(input, 3)).detailedString();
-		case "w": return this.conn.insertWorkout(
+				Integer.parseInt(words[3]),
+				this.conn).detailedString();
+		case "xu": return UnequippedExercise.insert(words[1], this.nthSubstring(input, 3), this.conn).detailedString();
+		case "w": return Workout.insert(
 				words[1],
 				words[2],
 				Integer.parseInt(words[3]),
 				Integer.parseInt(words[4]),
 				Integer.parseInt(words[5]),
-				this.nthSubstring(input, 7)).detailedString(this.conn);
+				this.nthSubstring(input, 7),
+				this.conn).detailedString(this.conn);
 		
 		default: return this.breakdown();
 		}
@@ -227,7 +231,10 @@ public class Conversation {
 	private String appendGroup(String input) {
 		try {
 			String[] words = input.split(" ");
-			return this.conn.addExerciseToGroup(Integer.parseInt(words[0]), Integer.parseInt(words[1]));
+			ExerciseGroup _g = new ExerciseGroup(Integer.parseInt(words[0]), this.conn);
+			_g.addExercise(Integer.parseInt(words[1]), this.conn);
+			
+			return _g.detailedString(this.conn);
 		}
 		catch (IndexOutOfBoundsException | SQLException e) {
 			System.out.println(e);
@@ -238,7 +245,10 @@ public class Conversation {
 	private String appendWorkout(String input) {
 		try {
 			String[] words = input.split(" ");
-			return this.conn.addExerciseToWorkout(Integer.parseInt(words[0]), Integer.parseInt(words[1]));
+			Workout _w = new Workout(Integer.parseInt(words[0]), this.conn);
+			_w.addExercise(Integer.parseInt(words[1]), this.conn);
+			
+			return _w.detailedString(this.conn);
 		}
 		catch (IndexOutOfBoundsException | SQLException e) {
 			System.out.println(e);
@@ -281,4 +291,17 @@ public class Conversation {
 		System.out.println(Conversation.nthSubstring(manyp, 6));
 		//System.out.println(manyp.substring(55));*/
 	}
+}
+
+abstract class Screen {
+	
+}
+
+class ConnectionScreen extends Screen {
+	
+}
+
+class WelcomeScreen extends Screen {
+	
+	
 }

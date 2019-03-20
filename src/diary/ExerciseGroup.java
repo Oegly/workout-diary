@@ -2,6 +2,7 @@ package diary;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 public class ExerciseGroup extends DiaryEntity {
@@ -60,6 +61,21 @@ public class ExerciseGroup extends DiaryEntity {
 		return lst;
 	}
 	
+	public static ExerciseGroup insert(String name, DBConn conn) throws SQLException {
+		String query = "INSERT INTO ExerciseGroup (Name) VALUES (?);";
+		
+		java.sql.PreparedStatement stm = conn.prepareStatement(query);
+		
+		stm.setString(1, name);
+		
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new ExerciseGroup(rs.getInt(1), conn);
+	}
+	
 	public ArrayList<Workout> getWorkouts(DBConn conn) throws SQLException {
 		ResultSet rs = conn.getRows("SELECT WorkoutID FROM ExerciseInWorkout NATURAL JOIN ExerciseInGroup WHERE GroupID =" + this.id + " GROUP BY WorkoutID;");
 		//return rs;
@@ -73,6 +89,15 @@ public class ExerciseGroup extends DiaryEntity {
 		return lst;
 	}
 	
+	public void addExercise(int exerciseId, DBConn conn) throws SQLException {
+		String query = "INSERT INTO ExerciseInGroup VALUES (?, ?);";
+		java.sql.PreparedStatement stm = conn.prepareStatement(query);
+		
+		stm.setInt(1, exerciseId);
+		stm.setInt(2, this.id);
+		stm.executeUpdate();
+	}
+	
 	public String toString() {
 		return "Øvingsgruppe (#" + String.valueOf(this.id)+ ") " + this.name;
 	}
@@ -80,13 +105,19 @@ public class ExerciseGroup extends DiaryEntity {
 	public String detailedString(DBConn conn) throws SQLException {
 		StringBuilder sb = new StringBuilder();
 		
-		ArrayList<Exercise> exercises = this.getExercises(conn);
-		
+		sb.append("Øvingar i gruppa:\n");
+		ArrayList<Exercise> exercises = this.getExercises(conn);		
 		for (Exercise _x: exercises) {
 			sb.append(" " + _x.toString() + "\n");
 		}
 		
-		return this.toString() + "\n" + sb.toString();
+		sb.append("\nTreningsøkter som inneheld øvingar i denne gruppa:\n");
+		ArrayList<Workout> workouts = this.getWorkouts(conn);
+		for (Workout _w: workouts) {
+			sb.append(" " + _w.toString() + "\n");
+		}
+		
+		return this.toString() + "\n\n" + sb.toString();
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {

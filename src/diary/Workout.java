@@ -3,6 +3,7 @@ package diary;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Time;
 import java.util.ArrayList;
 
@@ -68,6 +69,35 @@ public class Workout extends DiaryEntity {
 		return ret;
 	}
 	
+	public static Workout insert(String date, String time, int duration, int shape, int performance, String note, DBConn conn) throws SQLException {
+		String query = "INSERT INTO Workout (Date, Time, Duration, PersonalShape, PersonalPerformance, Note) VALUES (?, ?, ?, ?, ?, ?);";
+		
+		java.sql.PreparedStatement stm = conn.prepareStatement(query, true);
+		
+		stm.setString(1, date);
+		stm.setString(2, time);
+		stm.setInt(3, duration);
+		stm.setInt(4, shape);
+		stm.setInt(5, performance);
+		stm.setString(6, note);
+		
+		stm.executeUpdate();
+		
+		ResultSet rs = stm.getGeneratedKeys();
+		rs.next();
+		
+		return new Workout(rs.getInt(1), conn);
+	}
+	
+	public void addExercise(int exerciseId, DBConn conn) throws SQLException {
+		String query = "INSERT INTO ExerciseInWorkout VALUES (?, ?);";
+		java.sql.PreparedStatement stm = conn.prepareStatement(query);
+		
+		stm.setInt(1, exerciseId);
+		stm.setInt(2, this.id);
+		stm.executeUpdate();
+	}
+	
 	public static ArrayList<Workout> search(String s, DBConn conn) throws SQLException {
 		ArrayList<Workout> ret = new ArrayList<Workout>();
 		String query = "SELECT * FROM Workout WHERE Notes LIKE '%" + s + "%';";
@@ -80,17 +110,17 @@ public class Workout extends DiaryEntity {
 		return ret;
 	}
 	
-	public String getInterval(String start, String end, DBConn conn) {
+	public static String getInterval(String start, String end, DBConn conn) {
 		try {
-			String query = "SELECT * FROM Workout WHERE Date BETWEEN " + start + " AND " + end +";";
+			String query = "SELECT * FROM Workout WHERE Date BETWEEN '" + start + "' AND '" + end +"';";
 			ResultSet rs = conn.getRows(query);
 			
 			StringBuilder sb = new StringBuilder();
-			sb.append("Resultatlogg for intervallet " + start + " - " + end + " : (#, Dato, Form, Yting)");
+			sb.append("Resultatlogg for intervallet " + start + " - " + end + " : (#, Dato, Form, Yting)\n");
 			
 			while(rs.next()) {
 				Workout _w = new Workout(rs);
-				sb.append("#" + _w.id + " " + _w.date + ": " + this.personalShape + ", " + this.personalPerformance);
+				sb.append("#" + _w.id + " " + _w.date + ": " + _w.personalShape + ", " + _w.personalPerformance + "\n");
 			}
 			
 			return sb.toString();
@@ -126,6 +156,8 @@ public class Workout extends DiaryEntity {
 	public static void main(String[] args) throws SQLException, ClassNotFoundException, InstantiationException, IllegalAccessException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-
+		System.out.println(Workout.list(0, conn));
+		System.out.println(Workout.getInterval("2019-03-31", "2019-04-01", conn));
+		
 	}
 }

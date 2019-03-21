@@ -34,19 +34,15 @@ public class Conversation {
 	boolean done = false;
 	String prompt = " > ";
 	String error = "Det forstod eg ikkje heilt...";
-	String entityCodes = "w = Treningsøkt\n"
-			+ "e = Apparat\n"
-			+ "x = Øving\n"
-			+ "g = Øvingsgruppe\n";
 	State state;
 	State prevState;
 	DBConn conn;
 	
 	Conversation() {
 		this.connected = false;
-		//this.screen = new ConnectionScreen();
+		this.screen = new ConnectionScreen();
 
-		// BERRE FOR TESTING
+		/* BERRE FOR TESTING
 		try {
 			this.conn = new DBConn("localhost", "Diary", "root", "fish");
 		} catch (SQLException | ClassNotFoundException e) {
@@ -56,8 +52,9 @@ public class Conversation {
 		}
 		
 		this.connected = true;
+		System.out.println("Velkomment til treninigsdagboka di!");
 		this.screen = new WelcomeScreen();
-		// SLUTT PÅ TESTING		
+		// SLUTT PÅ TESTING		*/
 		//this.conn = conn;
 		System.out.print(this.getPrompt());
 	}
@@ -67,6 +64,8 @@ public class Conversation {
 	}
 	
 	public void feed(String input) throws SQLException {
+		this.screen.evaluate(input);
+
 		if (this.screen.isDone()) {
 			switch (this.screen.getClass().getName()) {
 			case "diary.ConnectionScreen":
@@ -76,7 +75,7 @@ public class Conversation {
 			break;
 			case "diary.WelcomeScreen":
 				switch (((WelcomeScreen) this.screen).getExitCode()) {
-				case 0: this.done = true; break;
+				case 0: this.conn.close(); this.done = true; break;
 				case 1: this.screen = new EquipmentScreen(this.conn); break;
 				case 2: this.screen = new ExerciseScreen(this.conn); break;
 				case 3: this.screen = new GroupScreen(this.conn); break;
@@ -88,8 +87,6 @@ public class Conversation {
 				this.screen = new WelcomeScreen();
 			}
 		}
-		
-		this.screen.evaluate(input);
 	}
 	
 	private void evaluate(String input) {
@@ -199,8 +196,9 @@ class WelcomeScreen extends Screen {
 			+ "tbak = avslutt programmet";
 	
 	WelcomeScreen() {
-		System.out.println("Velkommen til treningsdagboka di!\n" + this.helpMessage);
+		System.out.println(this.helpMessage);
 	}
+	
 	public boolean isDone() {
 		return this.done;
 	}
@@ -373,7 +371,9 @@ class ExerciseScreen extends EntityScreen {
 			"Tilgjengelege kommandoar:\n"
 			+ "list = Sjå ei liste over øvingar.\n"
 			+ "info = Sjå detaljert informasjon om ei øving.\n"
-			+ "nytt = Registrer ei ny øving.\n"
+			+ "intr = Sjå resultat for eit tidsintervall for ei gitt øving.\n"
+			+ "nytt a = Registrer ei ny øving (med apprat).\n"
+			+ "nytt u = Registrer ei ny øving (utan apparat).\n"
 			+ "help = Få hjelp til å administrere øvingar.\n"
 			+ "tbak = Gå tilbake til velkomstskjermen\n",
 			"Eksempel på kommandoar:\n"
@@ -406,8 +406,8 @@ class ExerciseScreen extends EntityScreen {
 
 	public void evaluate(String input) {
 		switch (this.state) {
-		case CREATE_U: this.create(input); break;
-		case CREATE_E: this.create(input); break;
+		case CREATE_U: this.createUnequipped(input); break;
+		case CREATE_E: this.createEquipped(input); break;
 		
 		default: this.splash(input); break;
 		}
@@ -422,7 +422,8 @@ class ExerciseScreen extends EntityScreen {
 			case "help": System.out.println(this.helpMessage[0] + "\n" + this.helpMessage[1]); break;
 			case "list": System.out.println(this.list(word)); break;
 			case "info": System.out.println(this.detail(word)); break;
-			case "nytt": this.prepareCreation(); break;
+			case "intr": System.out.println(this.interval(word)); break;
+			case "nytt": this.prepareCreation(word); break;
 			
 			default: System.out.println("No forstår eg ikkje heilt kva du meiner..."); break;
 			}
@@ -431,9 +432,25 @@ class ExerciseScreen extends EntityScreen {
 		}		
 	}
 	
-	public void prepareCreation() {
-		this.n = 0; 
-		this.state = State.CREATE_U;
+	public void prepareCreation(String[] word) {
+		String sub;
+		
+		try {
+			sub = word[1];
+		} catch (IndexOutOfBoundsException e) {
+			System.out.println("No forstår eg ikkje heilt kva du meiner...");
+			return;
+		}
+		
+		this.n = 0;
+		
+		if (sub.trim().equals("a")) {
+			this.state = State.CREATE_E;
+		} else if (sub.trim().equals("u")) {
+			this.state = State.CREATE_U;
+		} else {
+			System.out.println("No forstår eg ikkje heilt kva du meiner...");
+		}
 		
 		System.out.println("Skriv inn " + this.inputLabelU[n] + ": "); 
 	}
@@ -443,7 +460,35 @@ class ExerciseScreen extends EntityScreen {
 	}
 	
 	public void createEquipped(String input) {
+		this.inputWordE[n] = input;
 		
+		if (true) {
+			System.out.println("Godkjent: " + inputWordE[n]);
+			this.n += 1;
+		}
+		
+		if (n > 3) {
+			try {
+				System.out.println(EquippedExercise.insert(
+						inputWordE[0],
+						new Equipment(Integer.parseInt(inputWordE[1]), this.conn),
+						Integer.parseInt(inputWordE[2]),
+						Integer.parseInt(inputWordE[3]),
+						this.conn));
+			} catch (SQLException e) {
+				e.printStackTrace();
+				this.n = 0;
+			}
+			
+			for (int i = 0; i < this.inputWordU.length; i++) {
+				this.inputWordU[i] = "";
+			}
+			
+			this.state = State.INITIAL;
+			return;
+		}
+		
+		System.out.println("Skriv inn " + this.inputLabelE[n] + ": ");
 	}
 	
 	public void createUnequipped(String input) {
@@ -455,7 +500,7 @@ class ExerciseScreen extends EntityScreen {
 		
 		if (n > 1) {
 			try {
-				System.out.println(Equipment.insert(inputWordU[0], inputWordU[1], this.conn));
+				System.out.println(UnequippedExercise.insert(inputWordU[0], inputWordU[1], this.conn));
 			} catch (SQLException e) {
 				e.printStackTrace();
 				this.n = 0;
@@ -484,6 +529,20 @@ class ExerciseScreen extends EntityScreen {
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Oops... Det elementet fann vi ikkje.";
+		}
+	}
+	
+	private String interval(String[] word) {
+		try {
+			Exercise _e = Exercise.New(Integer.parseInt(word[1]), this.conn);
+			return _e.getInterval(word[2], word[3], this.conn);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return "Oops... Vi fann ikkje den øvinga du leitte etter...";
+		}
+		catch (IndexOutOfBoundsException e) {
+			e.printStackTrace();
+			return "Hugs å skrive både dato for start og slutt på formatet yyyy-mm-dd!";
 		}
 	}
 	

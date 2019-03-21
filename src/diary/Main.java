@@ -19,8 +19,8 @@ public class Main {
 			}
 			
 			scan.close();
-
-			System.out.println();
+			
+			System.out.println("Velkommen tilbake! :)");
 		} catch (SQLException  e) {
 			e.printStackTrace();
 		}

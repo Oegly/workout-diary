@@ -69,8 +69,30 @@ public abstract class Exercise extends DiaryEntity {
 		return ret;
 	}
 	
+	public String getInterval(String start, String end, DBConn conn) {
+		try {
+		String query = "SELECT * FROM Exercise NATURAL JOIN ExerciseInWorkout NATURAL JOIN Workout WHERE ExerciseID =" + this.id 
+				+ " AND Date BETWEEN '" + start + "' AND '" + end +"' ORDER BY Date DESC, Time DESC;";
+		ResultSet rs = conn.getRows(query);
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("Resultatlogg for intervallet " + start + " - " + end + " : (#, Dato, Form, Yting)\n");
+		
+		while(rs.next()) {
+			Workout _w = new Workout(rs);
+			sb.append("#" + _w.getId() + " " + _w.getDate() + ": " + _w.getPersonalShape() + ", " + _w.getPersonalPerformance() + "\n");
+		}
+		
+		return sb.toString();
+	} catch (SQLException e) {
+		System.out.println(e);
+		return "Prøv å skrive datoane på formatet yyyy-mm-dd";
+	}
+
+	}
+	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
-		//System.out.println(Exercise.New(1, new DBConn("localhost", "Diary", "root", "fish")));
+		
 	}
 }
 
@@ -112,7 +134,7 @@ class UnequippedExercise extends Exercise {
 	
 	@Override
 	public String detailedString(DBConn conn) {
-		return this.toString() + "(" + this.description +")";
+		return this.toString() + " (" + this.description +")";
 	}
 }
 

@@ -35,6 +35,22 @@ public class Workout extends DiaryEntity {
 		//this.exercises = this.getExercises(conn);
 	}
 	
+	public int getId() {
+		return this.id;
+	}
+	
+	public String getDate() {
+		return this.date.toString();
+	}
+	
+	public int getPersonalShape() {
+		return this.personalShape;
+	}
+	
+	public int getPersonalPerformance() {
+		return this.personalPerformance;
+	}
+	
 	public String getNote() {
 		return this.note;	
 	}
@@ -112,7 +128,7 @@ public class Workout extends DiaryEntity {
 	
 	public static String getInterval(String start, String end, DBConn conn) {
 		try {
-			String query = "SELECT * FROM Workout WHERE Date BETWEEN '" + start + "' AND '" + end +"';";
+			String query = "SELECT * FROM Workout WHERE Date BETWEEN '" + start + "' AND '" + end +"' ORDER BY Date DESC, Time DESC;";
 			ResultSet rs = conn.getRows(query);
 			
 			StringBuilder sb = new StringBuilder();

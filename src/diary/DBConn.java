@@ -26,9 +26,13 @@ public class DBConn {
 		this.database = database;
 				
 		this.db_url = "jdbc:mysql://" + server + "/" + database + "?useSSL=false";
-		System.out.println(db_url + ", " + username + ", " + password);
+		//System.out.println(db_url + ", " + username + ", " + password);
 		Class.forName("org.gjt.mm.mysql.Driver");
 		this.connection = DriverManager.getConnection(this.db_url, username, password);
+	}
+	
+	public void close() throws SQLException {
+		this.connection.close();
 	}
 	
 	public java.sql.PreparedStatement prepareStatement(String sql, boolean keyReturn) throws SQLException {

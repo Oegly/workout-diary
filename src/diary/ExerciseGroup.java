@@ -49,7 +49,7 @@ public class ExerciseGroup extends DiaryEntity {
 	}
 	
 	public ArrayList<Exercise> getExercises(DBConn conn) throws SQLException {
-		ResultSet rs = conn.getRow("SELECT * FROM Exercise NATURAL JOIN ExerciseInGroup WHERE GroupID = " + String.valueOf(this.id) + ";");
+		ResultSet rs = conn.getRows("SELECT * FROM Exercise NATURAL JOIN ExerciseInGroup WHERE GroupID = " + String.valueOf(this.id) + ";");
 		//return rs;
 		
 		ArrayList<Exercise> lst = new ArrayList<Exercise>();
@@ -123,6 +123,6 @@ public class ExerciseGroup extends DiaryEntity {
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
 		
-		System.out.println(new ExerciseGroup(1, conn).getWorkouts(conn).toString());
+		System.out.println(new ExerciseGroup(1, conn).getExercises(conn).toString());
 	}
 }

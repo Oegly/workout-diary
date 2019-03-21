@@ -560,13 +560,15 @@ class GroupScreen extends EntityScreen {
 			+ "list = Sjå ei liste over grupper.\n"
 			+ "info = Sjå detaljert informasjon om ei gruppe.\n"
 			+ "nytt = Registrer ei ny gruppe.\n"
+			+ "legg = Registrer ei øving som del av ei gruppe.\n"
 			+ "help = Få hjelp til å administrere grupper.\n"
 			+ "tbak = Gå tilbake til velkomstskjermen\n",
 			"Eksempel på kommandoar:\n"
 			+ "Skriv \"list\" om du vil sjå ei liste over alle gruppene."
 			+ "Skriv \"list 2\" om du vil sjå to grupper.\n"
 			+ "Skriv \"info 2\" om du vil sjå detaljert informasjon om gruppe #2.\n"
-			+ "Skriv \"nytt\" om du vil registrere ei ny gruppe. Du vil deretter bli spurd om meir info.\n",
+			+ "Skriv \"nytt\" om du vil registrere ei ny gruppe. Du vil deretter bli spurd om meir info.\n"
+			+ "Skriv \"legg 1 4\" om du vil legge øving #4 til treningsøkt #1.",
 	};
 	
 	int n;
@@ -596,6 +598,7 @@ class GroupScreen extends EntityScreen {
 			case "help": System.out.println(this.helpMessage[0] + "\n" + this.helpMessage[1]); break;
 			case "list": System.out.println(this.list(word)); break;
 			case "info": System.out.println(this.detail(word)); break;
+			case "legg": System.out.println(this.append(word)); break;
 			case "nytt": this.prepareCreation(); break;
 			
 			default: System.out.println("No forstår eg ikkje heilt kva du meiner..."); break;
@@ -631,14 +634,14 @@ class GroupScreen extends EntityScreen {
 		}
 		
 		try {
-			return new ExerciseGroup(i, this.conn).detailedString(conn);
+			return new ExerciseGroup(i, this.conn).detailedString(this.conn);
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return "Oops... Det elementet fann vi ikkje.";
 		}
 	}
 	
-	public void append(String[] word) {
+	public String append(String[] word) {
 		int groupID = Screen.wordToInt(word, 1);
 		int exerciseID = Screen.wordToInt(word, 2);
 		
@@ -650,11 +653,11 @@ class GroupScreen extends EntityScreen {
 			ExerciseGroup _g = new ExerciseGroup(groupID, this.conn);
 			_g.addExercise(exerciseID, this.conn);
 			
-			System.out.println(this.list(word));
+			return this.detail(word);
 			
 		} catch (SQLException e) {
 			e.printStackTrace();
-			System.out.println("Oops... Det elementet fann vi ikkje.");
+			return "Oops... Det elementet fann vi ikkje.";
 		}
 	}
 	
@@ -681,7 +684,8 @@ class WorkoutScreen extends EntityScreen {
 			+ "Skriv \"list 2\" om du vil sjå to treningsøkter.\n"
 			+ "Skriv \"info 2\" om du vil sjå detaljert informasjon om treningsøkt #2.\n"
 			+ "Skriv \"intr " + Calendar.getInstance().get(Calendar.YEAR) + "-01-01 " + Calendar.getInstance().get(Calendar.YEAR) + "-05-01 om du vil sjå resultat frå treningane mellom 1. januar og 1. mai.\n"
-			+ "Skriv \"nytt\" om du vil registrere ei nytt treningsøkt. Du vil deretter bli spurd om meir info.\n",
+			+ "Skriv \"nytt\" om du vil registrere ei nytt treningsøkt. Du vil deretter bli spurd om meir info.\n"
+			+ "Skriv \"legg 1 4\" om du vil legge øving #4 til treningsøkt #1.",
 	};
 	
 	String[] inputWord = {"", "", "", "", "", ""};

@@ -26,7 +26,7 @@ public class DBConn {
 		this.database = database;
 				
 		this.db_url = "jdbc:mysql://" + server + "/" + database + "?useSSL=false";
-		
+		System.out.println(db_url + ", " + username + ", " + password);
 		Class.forName("org.gjt.mm.mysql.Driver");
 		this.connection = DriverManager.getConnection(this.db_url, username, password);
 	}

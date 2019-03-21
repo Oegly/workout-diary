@@ -8,13 +8,11 @@ import java.util.Scanner;
 public class Main {
 	public static void main(String[] args)  {
 		try {
-			DBConn conn = new DBConn("localhost", "Diary", "root", "fish");
-			Conversation c = new Conversation(conn);
-			
-			String input = "";
+			Conversation c = new Conversation();
 			Scanner scan = new Scanner(System.in);
 						
-			while (!input.equals("quit") && scan.hasNext()) {
+			String input;
+			while (!c.isDone() && scan.hasNext()) {
 				input = scan.nextLine();
 				c.feed(input);
 				System.out.print(c.getPrompt());
@@ -23,7 +21,7 @@ public class Main {
 			scan.close();
 
 			System.out.println();
-		} catch (ClassNotFoundException | SQLException  e) {
+		} catch (SQLException  e) {
 			e.printStackTrace();
 		}
 	}

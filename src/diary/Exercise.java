@@ -111,7 +111,7 @@ class UnequippedExercise extends Exercise {
 	}
 	
 	@Override
-	public String detailedString() {
+	public String detailedString(DBConn conn) {
 		return this.toString() + "(" + this.description +")";
 	}
 }
@@ -157,7 +157,7 @@ class EquippedExercise extends Exercise {
 	}
 	
 	@Override
-	public String detailedString() {
+	public String detailedString(DBConn conn) {
 		return this.toString() + "\n"
 				+ "Bruk " + this.equipment.getName() + " (" + this.description + ")";
 	}
